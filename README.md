@@ -1,58 +1,173 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# SGRUP — Sistema de Gestión y Seguimiento de Proyectos
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplicación web para el control **técnico, financiero y documental** de los proyectos de investigación y extensión, convenios y contratos con alcaldías, gobernación y entidades privadas.
 
-## About Laravel
+> **Estado actual: versión de demostración (diseño).**
+> Los datos son de ejemplo y se generan en memoria (`app/Support/DemoData.php`); no se leen de la base de datos de negocio. El inicio de sesión consiste en elegir un usuario de prueba. Ver [Limitaciones de la demo](#limitaciones-de-la-demo).
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Roles y módulos
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Cada rol entra a su propio módulo, protegido por el middleware `role:<rol>`.
 
-## Learning Laravel
+| Rol | Prefijo de URL | Qué hace |
+|---|---|---|
+| **Investigador / Coordinador** (`investigador`) | `/investigador` | Carga el avance mensual, solicita compras, sube documentos, consulta cronograma, alertas y las pestañas de su proyecto. |
+| **Vicerrectoría / Subdirección** (`vicerrectoria`) | `/vicerrectoria` | Aprueba compras, avances, traslados y proyectos nuevos. Hace seguimiento (curva S, cronograma, reportes), avanza fases, certifica y liquida proyectos. |
+| **Área financiera** (`financiero`) | `/financiera` | Expide CDP, devuelve o valida compras, registra pagos, controla el presupuesto por rubro y valida soportes (paquete RUP). |
+| **Administrador** (`admin`) | `/administracion` | Gestiona usuarios y roles, rubros y reglas del sistema, consulta y exporta la auditoría, y restablece los datos de la demo. |
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Pestañas de un proyecto
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Investigador y Vicerrectoría comparten la vista de proyecto (`Vic\ProjectController`): resumen, objetivos y productos, presupuesto y traslados, avances, compras, documentos, trazabilidad y, solo para Vicerrectoría, la certificación.
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+---
 
-## Agentic Development
+## Tecnologías
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+- **PHP 8.3+** y **Laravel 13**
+- **Blade** para las vistas (layouts, componentes `x-*` y partials)
+- **Vite** con **Tailwind CSS 4** para los recursos front-end
+- **SQLite** por defecto, que en la demo solo guarda sesiones, caché y colas (PostgreSQL previsto para producción)
+- **PHPUnit** para pruebas y **Pint** para formato de código
+
+---
+
+## Requisitos
+
+- PHP 8.3 o superior, con las extensiones `pdo_sqlite`, `mbstring` y `openssl`
+- Composer 2
+- Node.js 20 o superior, con npm
+
+---
+
+## Instalación
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone <url-del-repositorio> sgrup
+cd sgrup
+composer run setup
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+`composer run setup` ejecuta, en orden:
 
-## Contributing
+1. `composer install`
+2. copia `.env.example` → `.env` (si no existe)
+3. `php artisan key:generate`
+4. `php artisan migrate --force` (crea las tablas de sesiones, caché y colas)
+5. `npm install` y `npm run build`
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Si prefieres hacerlo a mano:
 
-## Code of Conduct
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+touch database/database.sqlite   # en Windows: type nul > database\database.sqlite
+php artisan migrate
+npm install
+npm run build
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+---
 
-## Security Vulnerabilities
+## Ejecutar en local
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+composer run dev
+```
 
-## License
+Abre <http://localhost:8000>. Te redirige a `/login`, donde eliges un usuario de prueba y entras con su rol.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Si prefieres levantar los procesos por separado:
+
+```bash
+php artisan serve   # servidor PHP
+npm run dev         # Vite con recarga en caliente
+```
+
+### Usuarios de la demo
+
+| Usuario | Rol |
+|---|---|
+| Laura Méndez | Investigador / Coordinador |
+| Dra. Marcela Trujillo | Vicerrectoría |
+| Carlos Rojas | Área financiera |
+| Daniel Rojas | Administrador |
+
+No hace falta contraseña: se elige el usuario en la pantalla de inicio.
+
+---
+
+## Cómo funciona la demo
+
+- **Datos base**: `App\Support\DemoData` construye en memoria usuarios, proyectos, rubros, compras, avances, alertas y la curva S. Usa modelos Eloquent sin guardar, para que las vistas no cambien cuando se conecte la base de datos.
+- **Cambios hechos en la demo** (aprobaciones, CDP, pagos, usuarios creados…): se guardan con `App\Support\DemoState` en la **caché** de la aplicación. Así, lo que hace un rol lo ve el siguiente al cambiar de usuario.
+- **Restablecer**: el Administrador tiene el botón *Restablecer datos demo*. Desde la terminal también puedes hacerlo con `php artisan cache:clear`.
+- **Sesión**: `App\Http\Middleware\DemoAuth` toma de la sesión el usuario elegido y lo deja disponible en `auth()->user()`.
+
+---
+
+## Estructura del proyecto
+
+```
+app/
+├── Http/
+│   ├── Controllers/
+│   │   ├── AuthController.php        # Inicio de sesión de la demo
+│   │   ├── Adm/AdminController.php   # Administración
+│   │   ├── Fin/FinanceController.php # Área financiera
+│   │   ├── Inv/InvestigatorController.php
+│   │   └── Vic/                      # Panel, aprobaciones, proyectos, compras, monitoreo
+│   └── Middleware/
+│       ├── DemoAuth.php              # Usuario de la demo desde la sesión
+│       └── EnsureRole.php            # Restringe rutas por rol
+├── Models/                           # Project, BudgetLine, PurchaseRequest, MonthlyProgress…
+├── Support/                          # Lógica de la demo y de dominio
+│   ├── DemoData.php / DemoState.php  # Datos de ejemplo y estado persistido en caché
+│   ├── FinanceStore.php              # CDP, pagos, presupuesto, documentos
+│   ├── ApprovalInbox.php             # Bandeja de aprobaciones
+│   ├── ProjectTracking.php           # Avances, productos, trazabilidad
+│   ├── AdminStore.php                # Usuarios, parámetros, auditoría
+│   └── SCurve.php                    # Cálculo de la curva S
+└── helpers.php
+database/
+├── migrations/                       # Incluye el esquema de negocio (create_sigep_tables)
+└── seeders/DatabaseSeeder.php        # Los mismos datos de ejemplo, para cuando se use la BD
+resources/views/
+├── layouts/                          # app (general) y print (documentos imprimibles)
+├── components/                       # <x-icon>, <x-alert-item>, <x-s-curve>
+├── partials/
+├── auth/  adm/  fin/  inv/  vic/     # Vistas por módulo
+routes/web.php                        # Todas las rutas, agrupadas por rol
+```
+
+---
+
+## Comandos útiles
+
+| Comando | Para qué sirve |
+|---|---|
+| `composer run dev` | Levanta el entorno de desarrollo |
+| `composer run test` | Ejecuta las pruebas |
+| `./vendor/bin/pint` | Formatea el código PHP |
+| `php artisan route:list` | Lista todas las rutas |
+| `php artisan cache:clear` | Restablece el estado de la demo |
+| `php artisan migrate:fresh --seed` | Crea el esquema de negocio con datos de ejemplo (la demo todavía no lo usa) |
+
+---
+
+## Limitaciones de la demo
+
+- **No hay autenticación real.** Antes de producción hay que reemplazar el inicio de sesión por correo y contraseña y quitar `DemoAuth`.
+- **Los datos de negocio no salen de la base de datos.** `Route::bind('project', …)` y los *stores* leen de `DemoData`. Falta conectar los modelos a la base de datos (PostgreSQL) usando las migraciones y el seeder existentes.
+- **Los cambios viven en la caché.** Se pierden al limpiarla y son compartidos por todos los que usan la misma instancia.
+- La ruta `/pendiente` marca las secciones que aún no están construidas.
+- Las pruebas son solo las de ejemplo de Laravel.
+
+---
+
+## Licencia
+
+Proyecto académico del semillero de investigación. Define aquí la licencia del proyecto.
