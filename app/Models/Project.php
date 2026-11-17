@@ -81,6 +81,7 @@ class Project extends Model
         return match ($this->status) {
             'liquidado' => 'Liquidado',
             'propuesto' => 'Propuesto',
+            'rechazado' => 'Rechazado',
             default => self::HEALTH[$this->health] ?? $this->health,
         };
     }

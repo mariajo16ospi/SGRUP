@@ -8,7 +8,6 @@ use App\Support\DemoData;
 use App\Support\FinanceStore;
 use App\Support\SCurve;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -237,7 +236,7 @@ class FinanceController extends Controller
 
     public function projectBudget(Request $request, Project $project)
     {
-        abort_if($project->status === 'propuesto', 404);
+        abort_if(in_array($project->status, ['propuesto', 'rechazado'], true), 404);
 
         return view('fin.project', [
             'project' => $project,
@@ -292,7 +291,7 @@ class FinanceController extends Controller
             'cat' => $cat,
             'q' => $q,
             'rup' => $this->store->rupStatus(),
-            'projects' => DemoData::get()->projects->except('garzon')->values(),
+            'projects' => DemoData::get()->projects->whereIn('status', ['activo', 'liquidado'])->values(),
             'modal' => $request->query('modal') === 'subir' || old('_form') === 'subir',
         ]);
     }
@@ -315,14 +314,6 @@ class FinanceController extends Controller
     public function validateDocument(string $id)
     {
         return back()->with('status', $this->store->validateDocument($id));
-    }
-
-    public function download(string $id)
-    {
-        $doc = $this->store->document($id);
-        abort_unless($doc['path'] && Storage::exists($doc['path']), 404, 'Este documento es de ejemplo y no tiene archivo.');
-
-        return Storage::download($doc['path'], $doc['name']);
     }
 
     /** Paquete Cámara de Comercio: índice de los documentos RUP por proyecto. */

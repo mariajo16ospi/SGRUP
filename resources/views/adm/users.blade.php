@@ -18,7 +18,7 @@
                 <button class="btn btn-danger" type="submit"><x-icon name="refresh" size="16" />Restablecer datos demo</button>
             </form>
             <a class="btn btn-primary" href="{{ route('adm.usuarios', ['modal' => 'nuevo']) }}"><x-icon name="userplus" size="16" />Nuevo usuario</a>
-            <a class="btn btn-icon" href="{{ route('adm.auditoria') }}" aria-label="Actividad reciente"><x-icon name="bell" /><span class="dot"></span></a>
+            <x-notifications />
         </div>
     </div>
 

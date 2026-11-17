@@ -8,10 +8,8 @@
         </div>
     </div>
     <div class="card empty">
-        <h2 style="margin-bottom:6px">Esta sección se construirá en la siguiente fase</h2>
-        <p>Ya está diseñada en los mockups. Por ahora están disponibles el inicio de sesión y las pantallas de Vicerrectoría: Aprobaciones, Panel general, Proyectos y contratos y el resumen de cada proyecto.</p>
-        @if (auth()->user()->role === 'vicerrectoria')
-            <p style="margin-top:14px"><a class="btn btn-primary" href="{{ route('vic.panel') }}">Ir al panel general</a></p>
-        @endif
+        <h2 style="margin-bottom:6px">Esta sección todavía no está disponible</h2>
+        <p>En esta versión de demostración están construidas las pantallas de los cuatro roles: Investigador, Vicerrectoría, Área financiera y Administración.</p>
+        <p style="margin-top:14px"><a class="btn btn-primary" href="{{ auth()->user()->homeRoute() }}">Ir a mi página de inicio</a></p>
     </div>
 @endsection

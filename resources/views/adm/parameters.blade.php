@@ -10,7 +10,7 @@
         </div>
         <div class="actions">
             <a class="btn btn-primary" href="{{ route('adm.parametros', ['modal' => 'nuevo']) }}"><x-icon name="plus" size="16" />Nuevo rubro</a>
-            <a class="btn btn-icon" href="{{ route('adm.auditoria') }}" aria-label="Actividad reciente"><x-icon name="bell" /><span class="dot"></span></a>
+            <x-notifications />
         </div>
     </div>
 

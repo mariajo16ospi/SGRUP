@@ -11,6 +11,7 @@
             ['Aprobaciones', 'inbox', route('vic.aprobaciones'), request()->routeIs('vic.aprobaciones*'), $inbox->count()],
             ['Panel general', 'panel', route('vic.panel'), request()->routeIs('vic.panel'), null],
             ['Proyectos y contratos', 'folder', route('vic.proyectos.index'), request()->routeIs('vic.proyectos.*'), null],
+            ['Entidades', 'bank', route('entidades.index'), request()->routeIs('entidades.*'), null],
             ['Cronograma', 'calendar', route('vic.cronograma'), request()->routeIs('vic.cronograma'), null],
             ['Seguimiento técnico', 'list', route('vic.seguimiento'), request()->routeIs('vic.seguimiento'), null],
             ['Compras', 'cart', route('vic.compras'), request()->routeIs('vic.compras*'), $purchaseCount],
@@ -47,6 +48,7 @@
             ['Validación de compras', 'cart', route('fin.compras'), request()->routeIs('fin.compras*'), $purchasesToManage],
             ['Control presupuestario', 'wallet', route('fin.presupuesto'), request()->routeIs('fin.presupuesto*', 'fin.proyecto*'), null],
             ['Soportes y pagos', 'folder', route('fin.documentos'), request()->routeIs('fin.documentos*'), null],
+            ['Entidades', 'bank', route('entidades.index'), request()->routeIs('entidades.*'), null],
             ['Alertas', 'bell', route('fin.alertas'), request()->routeIs('fin.alertas'), $fin->alerts()->where('financial', true)->count()],
         ];
     }
@@ -105,5 +107,9 @@
         @yield('content')
     </main>
 </div>
+<script>
+    // Cierra el panel de notificaciones al hacer clic fuera de él
+    document.addEventListener('click', (e) => document.querySelectorAll('details.notif[open]').forEach((d) => { if (! d.contains(e.target)) d.removeAttribute('open'); }));
+</script>
 </body>
 </html>

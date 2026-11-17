@@ -16,7 +16,7 @@
         </div>
         <div class="actions">
             <a class="btn" href="{{ route('adm.auditoria.export', $query) }}"><x-icon name="download" size="16" />Exportar</a>
-            <a class="btn btn-icon" href="{{ route('adm.auditoria') }}" aria-label="Actividad reciente"><x-icon name="bell" /><span class="dot"></span></a>
+            <x-notifications />
         </div>
     </div>
 

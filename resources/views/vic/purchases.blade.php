@@ -7,12 +7,13 @@
         $q = fn (array $extra = []) => route('vic.compras', array_filter(['estado' => $tab === 'todas' ? null : $tab, 'ver' => $sel->code] + $extra));
         $quoted = (float) ($sel->original_value ?? $sel->value);
         $diff = (float) $sel->value - $quoted;
-        $vicDone = ! in_array($sel->status, ['en_vicerrectoria', 'requiere_ajuste', 'rechazada'], true);
+        $vicDone = ! in_array($sel->status, ['en_vicerrectoria', 'devuelta', 'requiere_ajuste', 'rechazada'], true);
         $flow = [
             ['Investigador / Coordinador', 'Creó la solicitud · ' . $sel->requester->name . ' · ' . date_es($sel->submitted_at), 'done'],
             ['Vicerrectoría / Subdirección', match ($sel->status) {
-                'en_vicerrectoria' => 'Te corresponde: revisión técnica', 'rechazada' => 'Rechazada', 'requiere_ajuste' => 'Devuelta para ajuste', default => 'Aprobada',
-            }, $sel->status === 'en_vicerrectoria' ? 'current' : ($sel->status === 'rechazada' ? 'error' : ($vicDone ? 'done' : 'next'))],
+                'en_vicerrectoria' => 'Te corresponde: revisión técnica', 'devuelta' => 'El área financiera la devolvió: revísala de nuevo',
+                'rechazada' => 'Rechazada', 'requiere_ajuste' => 'Devuelta para ajuste', default => 'Aprobada',
+            }, $sel->awaitingVicerrectoria() ? 'current' : ($sel->status === 'rechazada' ? 'error' : ($vicDone ? 'done' : 'next'))],
             ['Área financiera', $sel->cdp ? "CDP {$sel->cdp} expedido" : 'Valida disponibilidad y expide CDP', $sel->cdp || $sel->status === 'pagada' ? 'done' : ($sel->status === 'en_financiera' ? 'current' : 'next')],
             ['Pago', $sel->status === 'pagada' ? 'Pago registrado' : 'Registro del gasto y soporte', $sel->status === 'pagada' ? 'done' : 'next'],
         ];
@@ -25,7 +26,7 @@
         </div>
         <div class="actions">
             <a class="btn" href="{{ route('vic.reportes.export', 'compras') }}"><x-icon name="download" size="16" />Exportar</a>
-            <a class="btn btn-icon" href="{{ route('vic.alertas') }}" aria-label="Alertas"><x-icon name="bell" /><span class="dot"></span></a>
+            <x-notifications />
         </div>
     </div>
 
@@ -63,7 +64,7 @@
                                 <td style="white-space:nowrap"><span class="user-cell"><span class="avatar" aria-hidden="true">{{ $p->requester->initials() }}</span>{{ $p->requester->name }}</span></td>
                                 <td>
                                     <span class="badge {{ $p->statusTone() }}">{{ $p->statusLabel() }}</span>
-                                    @if ($p->overrunPercent() && $p->status === 'en_vicerrectoria')<div><span class="badge red" style="margin-top:4px">Excede rubro</span></div>@endif
+                                    @if ($p->overrunPercent() && $p->awaitingVicerrectoria())<div><span class="badge red" style="margin-top:4px">Excede rubro</span></div>@endif
                                 </td>
                             </tr>
                         @endforeach
@@ -122,7 +123,7 @@
                 </ul>
             </div>
 
-            @if ($sel->status === 'en_vicerrectoria')
+            @if ($sel->awaitingVicerrectoria())
                 <div class="detail-actions">
                     <a class="btn btn-danger" href="{{ $q(['modal' => 'rechazar']) }}">Rechazar</a>
                     <a class="btn" href="{{ $q(['modal' => 'ajuste']) }}">Solicitar ajuste</a>

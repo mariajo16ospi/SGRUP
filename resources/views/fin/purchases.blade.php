@@ -14,7 +14,7 @@
             <p class="sub">Solicitudes aprobadas por Vicerrectoría: expide el CDP y registra el pago</p>
         </div>
         <div class="actions">
-            <a class="btn btn-icon" href="{{ route('fin.alertas') }}" aria-label="Alertas"><x-icon name="bell" /><span class="dot"></span></a>
+            <x-notifications />
         </div>
     </div>
 

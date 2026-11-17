@@ -48,6 +48,23 @@ class DemoData
         return $id ? self::get()->users->firstWhere('id', $id) : null;
     }
 
+    /** Descarta los datos construidos para que la próxima lectura aplique el estado actual de la demo. */
+    public static function flush(): void
+    {
+        self::$instance = null;
+    }
+
+    /** Los proyectos creados en la demo tienen id desde este número (los de ejemplo, menos). */
+    public const FIRST_NEW_ID = 100;
+
+    /** Campos que Vicerrectoría puede editar de un proyecto. */
+    public const EDITABLE = ['name', 'code', 'type', 'modality', 'entity_id', 'coordinator_id', 'general_objective'];
+
+    public static function isNew(Project $project): bool
+    {
+        return $project->id >= self::FIRST_NEW_ID;
+    }
+
     private function __construct()
     {
         $this->lastReportedMonth = Carbon::create(2026, 9, 1);
@@ -56,6 +73,91 @@ class DemoData
         $this->buildRequests();
         $this->buildAlerts();
         $this->buildProducts();
+        $this->applyState();
+    }
+
+    /**
+     * Aplica lo que Vicerrectoría cambió durante la demo (DemoState): proyectos
+     * creados, propuestas aprobadas o rechazadas y datos editados.
+     */
+    private function applyState(): void
+    {
+        foreach (DemoState::get('vic_new_projects', []) as $r) {
+            $this->addProject($r);
+        }
+
+        foreach (DemoState::get('vic_projects', []) as $id => $decision) {
+            $p = $this->projects->firstWhere('id', (int) $id);
+            if (! $p || $p->status !== 'propuesto') {
+                continue;
+            }
+            if ($decision === 'aprobado') {
+                $p->status = 'activo';
+                $p->setRelation('curvePoints', $this->curve($p));
+            } else {
+                $p->status = 'rechazado';
+            }
+        }
+
+        foreach (DemoState::get('vic_project_edits', []) as $id => $fields) {
+            $p = $this->projects->firstWhere('id', (int) $id);
+            if (! $p) {
+                continue;
+            }
+            $p->forceFill(array_intersect_key($fields, array_flip(self::EDITABLE)));
+            if (isset($fields['coordinator_id']) && ($coord = $this->users->firstWhere('id', (int) $fields['coordinator_id']))) {
+                $p->setRelation('coordinator', $coord);
+            }
+        }
+
+        // Entidad: el proyecto se enlaza al catálogo y toma de ahí el nombre vigente
+        $entities = EntityStore::all();
+        $byId = $entities->keyBy('id');
+        $byName = EntityStore::seedIds();
+        foreach ($this->projects as $p) {
+            $id = $p->entity_id ?: ($byName[$p->entity] ?? null);
+            if ($id && isset($byId[$id])) {
+                $p->forceFill(['entity_id' => (int) $id, 'entity' => $byId[$id]['name']]);
+            }
+        }
+    }
+
+    /** Crea en memoria un proyecto registrado con «Nuevo proyecto». */
+    private function addProject(array $r): void
+    {
+        $coord = $this->users->firstWhere('id', (int) $r['coordinator_id']) ?? $this->users['laura'];
+        $s = Carbon::parse($r['start']);
+        $e = Carbon::parse($r['end']);
+        $days = $s->diffInDays($e);
+        $p = $this->make(Project::class, [
+            'code' => $r['code'], 'name' => $r['name'], 'type' => $r['type'], 'modality' => $r['modality'],
+            'entity' => $r['entity'] ?? '', 'entity_id' => $r['entity_id'] ?? null,
+            'coordinator_id' => $coord->id, 'start_date' => $s, 'end_date' => $e,
+            'preinvestment_end' => $s->copy()->addDays((int) round($days * 0.15)),
+            'investment_end' => $s->copy()->addDays((int) round($days * 0.83)),
+            'value' => (float) $r['value'], 'executed_amount' => 0, 'technical_progress' => 0,
+            'phase' => 'preinversion', 'status' => 'activo', 'health' => 'en_tiempo', 'general_objective' => $r['objective'],
+            'created_at' => Carbon::parse($r['created_at']),
+        ], (int) $r['id']);
+        $p->setRelation('coordinator', $coord);
+
+        $lines = collect();
+        foreach (self::BUDGET_LINES as $i => $name) {
+            $lines[$name] = $this->make(BudgetLine::class, [
+                'project_id' => $p->id, 'name' => $name, 'budgeted' => round($p->value * (float) ($r['split'][$name] ?? 0) / 100, 2),
+                'executed' => 0, 'committed' => 0,
+            ], $p->id * 100 + $i);
+        }
+        $p->setRelation('budgetLines', $lines);
+        $p->setRelation('curvePoints', $this->curve($p));
+        $this->projects["nuevo-{$p->id}"] = $p;
+
+        foreach ($r['products'] ?? [] as $i => $prod) {
+            $this->products->push([
+                'id' => $p->id * 100 + $i, 'project_id' => $p->id, 'name' => $prod['name'], 'type' => $prod['type'],
+                'done' => 0, 'target' => (int) $prod['target'], 'unit' => $prod['unit'], 'due' => Carbon::parse($prod['due']),
+            ]);
+        }
     }
 
     private function make(string $class, array $attrs, int $id): mixed

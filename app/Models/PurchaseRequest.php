@@ -49,6 +49,12 @@ class PurchaseRequest extends Model
         };
     }
 
+    /** Espera decisión de Vicerrectoría: recién enviada o devuelta por el área financiera. */
+    public function awaitingVicerrectoria(): bool
+    {
+        return in_array($this->status, ['en_vicerrectoria', 'devuelta'], true);
+    }
+
     /** Porcentaje en que el valor actual supera el valor inicialmente cotizado. */
     public function overrunPercent(): ?int
     {

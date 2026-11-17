@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Models\Project;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -48,9 +49,10 @@ class ApprovalInbox
         $d = DemoData::get();
         $items = collect();
 
-        foreach ($this->finance->purchases()->where('status', 'en_vicerrectoria') as $c) {
+        foreach ($this->finance->purchases()->filter(fn ($c) => $c->awaitingVicerrectoria()) as $c) {
             $overrun = $c->overrunPercent();
-            $items->push($this->item('compra', $c->id, "{$c->code} · {$c->description}", null,
+            $items->push($this->item('compra', $c->id, "{$c->code} · {$c->description}",
+                $c->status === 'devuelta' ? 'Devuelta por el área financiera: ' . Str::after(collect($c->changes_log)->last()['text'] ?? '', 'Devolvió a Vicerrectoría: ') : null,
                 $overrun ? "Excede rubro +{$overrun} %" : ($this->finance->line($c->budgetLine)['available'] < $c->value ? 'Sin saldo en el rubro' : null),
                 $c->project, $c->requester->name, $c->value, $c->submitted_at, route('vic.compras', ['ver' => $c->code])));
         }
@@ -77,7 +79,8 @@ class ApprovalInbox
                 continue;
             }
             $items->push($this->item('proyecto', $p->id, $p->name,
-                "{$p->modalityLabel()} con {$p->entity}", null, null, $p->coordinator->name, $p->value, $p->created_at, null));
+                "{$p->modalityLabel()} con {$p->entity}", null, null, $p->coordinator->name, $p->value, $p->created_at,
+                route('vic.aprobaciones', ['revisar' => $p->id])));
         }
 
         return $items->sortBy('received')->values();
@@ -115,7 +118,7 @@ class ApprovalInbox
 
     private function approvePurchase($c, ?string $comment): string
     {
-        abort_unless($c->status === 'en_vicerrectoria', 409, 'La compra ya no está pendiente.');
+        abort_unless($c->awaitingVicerrectoria(), 409, 'La compra ya no está pendiente.');
         // Control automático de límites presupuestales
         $available = $this->finance->line($c->budgetLine)['available'];
         if ($available < (float) $c->value) {
@@ -133,7 +136,7 @@ class ApprovalInbox
     public function decidePurchase(string $code, string $decision, string $reason, string $notes): string
     {
         $c = $this->finance->purchase($code);
-        abort_unless($c->status === 'en_vicerrectoria', 409, 'La compra ya no está pendiente.');
+        abort_unless($c->awaitingVicerrectoria(), 409, 'La compra ya no está pendiente.');
         if ($decision === 'rechazar') {
             $this->finance->update($code, ['status' => 'rechazada'], "Rechazada por Vicerrectoría: {$reason}. {$notes}");
 
@@ -181,11 +184,30 @@ class ApprovalInbox
         return "{$t['code']} aprobado. Se trasladaron " . money($t['amount']) . " de {$t['from']} a {$t['to']}.";
     }
 
+    /** Proyecto propuesto que espera la decisión de Vicerrectoría. */
+    public function proposal(int $id): Project
+    {
+        $p = DemoData::get()->projects->firstWhere('id', $id);
+        abort_unless($p && $p->status === 'propuesto', 404, 'El proyecto ya fue revisado.');
+
+        return $p;
+    }
+
     private function approveProject(Project $p): string
     {
-        abort_unless($p->status === 'propuesto' && ! isset(DemoState::get('vic_projects', [])[$p->id]), 409, 'El proyecto ya fue revisado.');
+        abort_unless($p->status === 'propuesto', 409, 'El proyecto ya fue revisado.');
         DemoState::put("vic_projects.{$p->id}", 'aprobado');
+        $this->tracking->log($p, 'Aprobó el proyecto', 'Inicia en fase de Preinversión');
 
         return "Proyecto «{$p->name}» aprobado. Inicia en fase de Preinversión.";
+    }
+
+    public function rejectProject(int $id, string $reason): string
+    {
+        $p = $this->proposal($id);
+        DemoState::put("vic_projects.{$p->id}", 'rechazado');
+        $this->tracking->log($p, 'Rechazó la propuesta de proyecto', $reason);
+
+        return "Propuesta «{$p->name}» rechazada. {$p->coordinator->name} verá el motivo en la trazabilidad.";
     }
 }

@@ -11,7 +11,7 @@
             <a class="btn" href="{{ route($area . '.cronograma', $withClosed ? [] : ['liquidados' => 1]) }}" role="switch" aria-checked="{{ $withClosed ? 'true' : 'false' }}">
                 <span class="switch" aria-hidden="true" aria-checked="{{ $withClosed ? 'true' : 'false' }}" style="width:34px;height:20px"></span>Incluir liquidados
             </a>
-            <a class="btn btn-icon" href="{{ route($area . '.alertas') }}" aria-label="Alertas"><x-icon name="bell" /><span class="dot"></span></a>
+            <x-notifications />
         </div>
     </div>
 

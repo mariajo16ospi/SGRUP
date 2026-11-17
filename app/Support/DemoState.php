@@ -30,7 +30,14 @@ class DemoState
     {
         $all = self::all();
         Arr::set($all, $key, $value);
+        self::save($all);
+    }
+
+    /** Guarda el estado y descarta los datos ya construidos para que reflejen el cambio. */
+    private static function save(array $all): void
+    {
         Cache::forever(self::KEY, $all);
+        DemoData::flush();
     }
 
     public static function push(string $key, mixed $value): void
@@ -44,11 +51,12 @@ class DemoState
     {
         $all = self::all();
         Arr::forget($all, (array) $keys);
-        Cache::forever(self::KEY, $all);
+        self::save($all);
     }
 
     public static function reset(): void
     {
         Cache::forget(self::KEY);
+        DemoData::flush();
     }
 }

@@ -8,6 +8,7 @@ use App\Support\ApprovalInbox;
 use App\Support\DemoData;
 use App\Support\DemoState;
 use App\Support\FinanceStore;
+use App\Support\ProjectStore;
 use App\Support\ProjectTracking;
 use App\Support\SCurve;
 use Illuminate\Http\Request;
@@ -38,7 +39,7 @@ class ProjectController extends Controller
 
     public function __construct(private FinanceStore $finance, private ProjectTracking $tracking) {}
 
-    public function index(Request $request)
+    public function index(Request $request, ProjectStore $store)
     {
         $filter = array_key_exists($request->query('filtro'), self::FILTERS) ? $request->query('filtro') : 'todos';
         $q = trim((string) $request->query('q'));
@@ -47,7 +48,80 @@ class ProjectController extends Controller
             'projects' => $this->filtered($filter, $q),
             'filter' => $filter,
             'q' => $q,
+            'creating' => $request->query('modal') === 'nuevo' || old('_form') === 'nuevo-proyecto',
+            'coordinators' => $store->coordinators(),
+            'entities' => $store->entities(),
         ]);
+    }
+
+    /** «Nuevo proyecto / contrato»: queda activo en fase de Preinversión. */
+    public function store(Request $request, ProjectStore $store)
+    {
+        $lines = DemoData::BUDGET_LINES;
+        $data = $request->validate($this->rules($store) + [
+            'start' => ['required', 'date'],
+            'end' => ['required', 'date', 'after:start'],
+            'value' => ['required', 'integer', 'min:1000000'],
+            'split' => ['required', 'array'],
+            'split.*' => ['required', 'numeric', 'min:0', 'max:100'],
+            'products' => ['array'],
+            'products.*.name' => ['nullable', 'string', 'max:120'],
+            'products.*.type' => ['required_with:products.*.name', 'nullable', Rule::in(ProjectTracking::PRODUCT_TYPES)],
+            'products.*.target' => ['required_with:products.*.name', 'nullable', 'integer', 'min:1', 'max:100000'],
+            'products.*.due' => ['required_with:products.*.name', 'nullable', 'date', 'after_or_equal:start', 'before_or_equal:end'],
+        ], [
+            'end.after' => 'La fecha de finalización debe ser posterior a la de inicio.',
+            'value.min' => 'El valor mínimo es $1.000.000.',
+            'products.*.target.required_with' => 'Escribe la meta de cada producto.',
+            'products.*.due.required_with' => 'Escribe la fecha de entrega de cada producto.',
+            'products.*.due.after_or_equal' => 'Las entregas deben estar dentro de la vigencia del proyecto.',
+            'products.*.due.before_or_equal' => 'Las entregas deben estar dentro de la vigencia del proyecto.',
+        ] + $this->messages());
+        $split = array_intersect_key($data['split'], array_flip($lines));
+        if (count($split) !== count($lines) || abs(array_sum($split) - 100) > 0.01) {
+            return back()->withInput()->withErrors(['split' => 'La distribución por rubros debe sumar 100 % (hoy suma ' . round(array_sum($split), 2) . ' %).']);
+        }
+        $data['split'] = $split;
+        $project = $store->create($data);
+
+        return redirect()->route('vic.proyectos.show', $project)
+            ->with('status', "Proyecto «{$project->name}» creado. Inicia en fase de Preinversión con su ruta de ejecución y curva S proyectada.");
+    }
+
+    /** «Editar»: datos generales del proyecto (las fechas y el valor no cambian aquí). */
+    public function update(Request $request, Project $project, ProjectStore $store)
+    {
+        abort_unless($project->status === 'activo', 409, 'Solo se pueden editar proyectos activos.');
+        $data = $request->validate($this->rules($store, $project), $this->messages());
+        $tab = array_key_exists($request->input('tab'), self::TABS) ? $request->input('tab') : 'show';
+
+        return redirect()->route("vic.proyectos.{$tab}", $project)->with('status', $store->update($project, $data));
+    }
+
+    /** Reglas comunes de crear y editar. */
+    private function rules(ProjectStore $store, ?Project $project = null): array
+    {
+        return [
+            'name' => ['required', 'string', 'max:150'],
+            'code' => ['required', 'string', 'max:30', Rule::notIn($store->codes($project))],
+            'type' => ['required', Rule::in(array_keys(Project::TYPES))],
+            'modality' => ['required', Rule::in(array_keys(Project::MODALITIES))],
+            'entity_id' => ['required', 'integer', Rule::in($store->entities($project)->pluck('id')->all())],
+            'coordinator_id' => ['required', 'integer', Rule::in($store->coordinators()->pluck('id')->all())],
+            'general_objective' => ['required', 'string', 'max:1000'],
+        ];
+    }
+
+    private function messages(): array
+    {
+        return [
+            'name.required' => 'Escribe el nombre del proyecto.',
+            'code.required' => 'Escribe el código o número de contrato.',
+            'code.not_in' => 'Ya existe un proyecto con ese código.',
+            'entity_id.required' => 'Elige la entidad de la lista. Si no está, créala primero en Entidades.',
+            'entity_id.in' => 'Elige la entidad de la lista. Si no está, créala primero en Entidades.',
+            'general_objective.required' => 'Escribe el objetivo general.',
+        ];
     }
 
     /** Exportación a CSV (se abre directamente en Excel). */
@@ -93,7 +167,7 @@ class ProjectController extends Controller
     /** Datos comunes del encabezado del proyecto. */
     private function base(Project $project, string $tab): array
     {
-        abort_if($project->status === 'propuesto', 404);
+        abort_if(in_array($project->status, ['propuesto', 'rechazado'], true), 404);
         $area = $this->area();
         // El investigador solo ve los proyectos a su cargo
         abort_if($area === 'inv' && $project->coordinator_id !== auth()->id(), 403, 'Este proyecto no está a tu cargo.');

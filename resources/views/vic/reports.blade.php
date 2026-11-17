@@ -17,7 +17,7 @@
             <h1>Reportes y experiencia institucional</h1>
             <p class="sub">Consolidación de información para la toma de decisiones y la certificación de experiencia</p>
         </div>
-        <div class="actions"><a class="btn btn-icon" href="{{ route('vic.alertas') }}" aria-label="Alertas"><x-icon name="bell" /><span class="dot"></span></a></div>
+        <div class="actions"><x-notifications /></div>
     </div>
 
     <div class="grid-3" style="margin-bottom:20px">

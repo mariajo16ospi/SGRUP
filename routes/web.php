@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\EntityController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Adm;
 use App\Http\Controllers\Fin;
 use App\Http\Controllers\Inv;
@@ -20,7 +23,18 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::middleware('demo.auth')->group(function () {
     // Secciones aún no construidas (siguientes fases)
     Route::get('/pendiente', fn () => view('pending'))->name('pendiente');
-    Route::get('/documentos/{id}/descargar', [Fin\FinanceController::class, 'download'])->name('documentos.descargar');
+    Route::get('/documentos/{id}/descargar', [DocumentController::class, 'download'])->name('documentos.descargar');
+    Route::get('/documentos/{id}/ver', [DocumentController::class, 'inline'])->name('documentos.ver');
+    Route::post('/notificaciones/leidas', [NotificationController::class, 'markRead'])->name('notificaciones.leidas');
+
+    // Catálogo de entidades contratantes y aliadas
+    Route::prefix('entidades')->name('entidades.')->middleware('role:vicerrectoria,financiero')->controller(EntityController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::put('/{id}', 'update')->whereNumber('id')->name('update');
+        Route::post('/{id}/documentos', 'upload')->whereNumber('id')->name('documentos.subir');
+        Route::get('/documentos/{doc}', 'download')->name('documentos.descargar');
+    });
 
     Route::prefix('administracion')->name('adm.')->middleware('role:admin')->controller(Adm\AdminController::class)->group(function () {
         Route::get('/', 'users')->name('usuarios');
@@ -98,12 +112,16 @@ Route::middleware('demo.auth')->group(function () {
     Route::prefix('vicerrectoria')->name('vic.')->middleware('role:vicerrectoria')->group(function () {
         Route::get('/', Vic\PanelController::class)->name('panel');
         Route::get('/aprobaciones', [Vic\ApprovalController::class, 'index'])->name('aprobaciones');
+        Route::get('/aprobaciones/exportar', [Vic\ApprovalController::class, 'export'])->name('aprobaciones.export');
         Route::post('/aprobaciones/{type}/{id}/aprobar', [Vic\ApprovalController::class, 'approve'])
             ->whereIn('type', ['compra', 'avance', 'traslado', 'proyecto'])->whereNumber('id')->name('aprobaciones.aprobar');
+        Route::post('/aprobaciones/proyecto/{id}/rechazar', [Vic\ApprovalController::class, 'rejectProject'])->whereNumber('id')->name('aprobaciones.rechazar');
 
         Route::get('/proyectos', [Vic\ProjectController::class, 'index'])->name('proyectos.index');
+        Route::post('/proyectos', [Vic\ProjectController::class, 'store'])->name('proyectos.store');
         Route::get('/proyectos/exportar', [Vic\ProjectController::class, 'export'])->name('proyectos.export');
         Route::get('/proyectos/{project}', [Vic\ProjectController::class, 'show'])->whereNumber('project')->name('proyectos.show');
+        Route::put('/proyectos/{project}', [Vic\ProjectController::class, 'update'])->whereNumber('project')->name('proyectos.update');
         Route::post('/proyectos/{project}/siguiente-fase', [Vic\ProjectController::class, 'advancePhase'])->whereNumber('project')->name('proyectos.fase');
         Route::post('/proyectos/{project}/liquidar', [Vic\ProjectController::class, 'liquidate'])->whereNumber('project')->name('proyectos.liquidar');
 

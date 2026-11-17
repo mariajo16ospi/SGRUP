@@ -16,7 +16,7 @@
         <div class="actions">
             <a class="btn" href="{{ route('inv.compras', ['modal' => 'nueva']) }}"><x-icon name="cart" size="16" />Nueva solicitud de compra</a>
             <a class="btn btn-primary" href="{{ route('inv.cargar') }}"><x-icon name="upload" size="16" />Cargar avance del mes</a>
-            <a class="btn btn-icon" href="{{ route('inv.alertas') }}" aria-label="Alertas"><x-icon name="bell" /><span class="dot"></span></a>
+            <x-notifications />
         </div>
     </div>
 

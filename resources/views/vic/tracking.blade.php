@@ -11,7 +11,7 @@
             <h1>Seguimiento técnico</h1>
             <p class="sub">Objetivos, productos, porcentaje de avance y control de fechas de entrega</p>
         </div>
-        <div class="actions"><a class="btn btn-icon" href="{{ route('vic.alertas') }}" aria-label="Alertas"><x-icon name="bell" /><span class="dot"></span></a></div>
+        <div class="actions"><x-notifications /></div>
     </div>
 
     <div class="grid-4">

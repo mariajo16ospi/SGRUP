@@ -82,7 +82,7 @@ class AdminStore
             $row = [
                 'id' => $u->id, 'name' => $u->name, 'email' => $u->email, 'role' => $u->role,
                 'department' => $u->department, 'active' => true, 'demo' => true,
-                'projects' => $d->projects->where('coordinator_id', $u->id)->where('status', '!=', 'propuesto')->count(),
+                'projects' => $d->projects->where('coordinator_id', $u->id)->whereIn('status', ['activo', 'liquidado'])->count(),
             ];
 
             return array_merge($row, $changes[$u->id] ?? []);

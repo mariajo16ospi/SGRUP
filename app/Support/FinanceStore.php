@@ -389,7 +389,8 @@ class FinanceStore
         $reportSizes = ['tic' => 1.3, 'drones' => 1.7, 'energia' => 1.6, 'emprende' => 1.5, 'tatacoa' => 1.6];
         $zipSizes = ['tic' => 1.8, 'drones' => 0.8, 'energia' => 0.3, 'emprende' => 0.6, 'residuos' => 1.1, 'tatacoa' => 0.4];
 
-        foreach ($d->projects->except('garzon') as $key => $p) {
+        // Documentos de ejemplo; los proyectos creados en la demo solo tienen los que se suban
+        foreach ($d->projects->except('garzon')->reject(fn ($p) => DemoData::isNew($p)) as $key => $p) {
             $s = $p->start_date;
             $add($p, 'Contrato o convenio', "{$p->contractLabel()} {$p->code}.pdf", 'PDF', $vic, $s->copy()->subDays(10), 2.4, true);
             $add($p, 'Acta de inicio', "Acta de inicio {$p->code}.pdf", 'PDF', $p->coordinator->name, $s->copy()->addDays(3), 0.6, true);
@@ -449,7 +450,7 @@ class FinanceStore
     {
         $docs = $this->documents();
 
-        return DemoData::get()->projects->except('garzon')->map(fn ($p) => [
+        return DemoData::get()->projects->whereIn('status', ['activo', 'liquidado'])->map(fn ($p) => [
             'project' => $p,
             'done' => collect(self::RUP_DOCS)->filter(fn ($t) => $docs->where('project.id', $p->id)->where('type', $t)->where('validated', true)->isNotEmpty())->count(),
         ])->values();

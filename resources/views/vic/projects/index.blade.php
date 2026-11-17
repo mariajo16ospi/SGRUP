@@ -9,8 +9,8 @@
         </div>
         <div class="actions">
             <a class="btn" href="{{ route('vic.proyectos.export', ['filtro' => $filter, 'q' => $q]) }}"><x-icon name="download" size="16" />Exportar Excel</a>
-            <button class="btn btn-primary" type="button" disabled title="Disponible en la siguiente fase"><x-icon name="plus" size="16" />Nuevo proyecto</button>
-            <a class="btn btn-icon" href="{{ route('vic.alertas') }}" aria-label="Alertas"><x-icon name="bell" /><span class="dot"></span></a>
+            <a class="btn btn-primary" href="{{ route('vic.proyectos.index', ['modal' => 'nuevo']) }}"><x-icon name="plus" size="16" />Nuevo proyecto</a>
+            <x-notifications />
         </div>
     </div>
 
@@ -60,5 +60,9 @@
                 </article>
             @endforeach
         </div>
+    @endif
+
+    @if ($creating)
+        @include('vic.projects._new', ['close' => route('vic.proyectos.index', array_filter(['filtro' => $filter === 'todos' ? null : $filter, 'q' => $q]))])
     @endif
 @endsection

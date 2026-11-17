@@ -9,7 +9,7 @@
             <p class="sub">Sobrecostos, plazos, entregas vencidas y reportes pendientes, generados automáticamente</p>
         </div>
         <div class="actions">
-            <a class="btn btn-icon" href="{{ route('fin.alertas') }}" aria-label="Alertas"><x-icon name="bell" /><span class="dot"></span></a>
+            <x-notifications />
         </div>
     </div>
 

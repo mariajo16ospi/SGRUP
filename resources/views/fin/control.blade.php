@@ -10,7 +10,7 @@
         </div>
         <div class="actions">
             <a class="btn" href="{{ route('fin.control.export') }}"><x-icon name="download" size="16" />Exportar</a>
-            <a class="btn btn-icon" href="{{ route('fin.alertas') }}" aria-label="Alertas"><x-icon name="bell" /><span class="dot"></span></a>
+            <x-notifications />
         </div>
     </div>
 

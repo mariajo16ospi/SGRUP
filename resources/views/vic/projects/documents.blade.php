@@ -21,11 +21,7 @@
                 <div class="doc">
                     <span class="ext {{ strtolower($doc['ext']) }}" aria-hidden="true">{{ $doc['ext'] }}</span>
                     <div class="info">
-                        @if ($doc['path'])
-                            <b><a href="{{ route('documentos.descargar', $doc['id']) }}">{{ $doc['name'] }}</a></b>
-                        @else
-                            <b>{{ $doc['name'] }}</b>
-                        @endif
+                        <b><a href="{{ request()->fullUrlWithQuery(['ver' => $doc['id'], 'modal' => null]) }}">{{ $doc['name'] }}</a></b>
                         <span>{{ $doc['type'] }}</span><br>
                         <span>{{ $doc['by'] }} · {{ date_es($doc['date']) }} · {{ number_format($doc['size'], 1, ',', '.') }} MB</span>
                     </div>
@@ -106,5 +102,9 @@
                 </div>
             </form>
         </div>
+    @endif
+
+    @if ($preview = $all->firstWhere('id', request('ver')))
+        @include('partials.document-preview', ['doc' => $preview, 'close' => request()->fullUrlWithQuery(['ver' => null])])
     @endif
 @endsection

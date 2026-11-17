@@ -18,6 +18,10 @@ Cada rol entra a su propio módulo, protegido por el middleware `role:<rol>`.
 | **Área financiera** (`financiero`) | `/financiera` | Expide CDP, devuelve o valida compras, registra pagos, controla el presupuesto por rubro y valida soportes (paquete RUP). |
 | **Administrador** (`admin`) | `/administracion` | Gestiona usuarios y roles, rubros y reglas del sistema, consulta y exporta la auditoría, y restablece los datos de la demo. |
 
+### Entidades
+
+Vicerrectoría y el Área financiera administran en **Entidades** (`/entidades`) el catálogo de entidades contratantes y aliadas: sus datos (NIT, tipo, municipio, representante legal, contacto) y sus documentos legales (RUT, existencia y representación legal, certificación bancaria…). Cada entidad tiene un checklist de documentos obligatorios según sea pública o privada. Al crear o editar un proyecto, la entidad se busca y se elige de este catálogo.
+
 ### Pestañas de un proyecto
 
 Investigador y Vicerrectoría comparten la vista de proyecto (`Vic\ProjectController`): resumen, objetivos y productos, presupuesto y traslados, avances, compras, documentos, trazabilidad y, solo para Vicerrectoría, la certificación.
@@ -163,8 +167,9 @@ routes/web.php                        # Todas las rutas, agrupadas por rol
 - **No hay autenticación real.** Antes de producción hay que reemplazar el inicio de sesión por correo y contraseña y quitar `DemoAuth`.
 - **Los datos de negocio no salen de la base de datos.** `Route::bind('project', …)` y los *stores* leen de `DemoData`. Falta conectar los modelos a la base de datos (PostgreSQL) usando las migraciones y el seeder existentes.
 - **Los cambios viven en la caché.** Se pierden al limpiarla y son compartidos por todos los que usan la misma instancia.
-- La ruta `/pendiente` marca las secciones que aún no están construidas.
-- Las pruebas son solo las de ejemplo de Laravel.
+- **Las alertas son una lista fija de ejemplo**; todavía no se calculan a partir de los datos.
+- **Cambiar de fase y liquidar** solo queda anotado en la trazabilidad; el proyecto no cambia de estado.
+- Las pruebas (`tests/Feature`, 21 en total) cubren las pantallas de cada rol y los flujos principales de la demo.
 
 ---
 

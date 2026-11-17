@@ -25,7 +25,7 @@ class PurchaseController extends Controller
         $all = $this->finance->purchases();
         $tab = array_key_exists($request->query('estado'), self::TABS) ? $request->query('estado') : 'todas';
         $statuses = self::TABS[$tab][1];
-        $mine = $all->where('status', 'en_vicerrectoria');
+        $mine = $all->filter(fn ($p) => $p->awaitingVicerrectoria());
         $selected = $request->query('ver')
             ? $this->finance->purchase($request->query('ver'))
             : ($mine->sortBy('submitted_at')->first() ?? $all->first());
@@ -33,7 +33,7 @@ class PurchaseController extends Controller
         $month = $all->max('submitted_at')->copy()->startOfMonth();
         $ofMonth = $all->filter(fn ($p) => $p->submitted_at->isSameMonth($month));
         $approved = $all->whereIn('status', ['aprobada', 'pagada']);
-        $modal = in_array($request->query('modal'), ['aprobar', 'rechazar', 'ajuste'], true) && $selected->status === 'en_vicerrectoria'
+        $modal = in_array($request->query('modal'), ['aprobar', 'rechazar', 'ajuste'], true) && $selected->awaitingVicerrectoria()
             ? $request->query('modal') : null;
 
         return view('vic.purchases', [
@@ -42,7 +42,7 @@ class PurchaseController extends Controller
             'tabs' => collect(self::TABS)->map(fn ($t) => ['label' => $t[0], 'count' => $t[1] ? $all->whereIn('status', $t[1])->count() : $all->count()]),
             'selected' => $selected,
             'line' => $line,
-            'insufficient' => $selected->status === 'en_vicerrectoria' && $line['available'] < (float) $selected->value,
+            'insufficient' => $selected->awaitingVicerrectoria() && $line['available'] < (float) $selected->value,
             'month' => $month,
             'ofMonth' => $ofMonth,
             'pendingOfMonth' => $ofMonth->whereIn('status', self::TABS['pendientes'][1])->count(),
