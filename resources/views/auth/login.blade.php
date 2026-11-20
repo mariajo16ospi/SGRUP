@@ -4,6 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Iniciar sesión · SGRUP</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('img/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="512x512" href="{{ asset('img/icon-512.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('img/apple-touch-icon.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/sgrup.css') }}?v={{ filemtime(public_path('css/sgrup.css')) }}">
@@ -38,7 +41,7 @@
         <form method="post" action="{{ route('login.store') }}">
             @csrf
             <h2>Iniciar sesión</h2>
-            <p class="lead">Versión de demostración: elige un usuario para entrar con su rol.</p>
+            <br><br>
             @error('user_id')<div class="flash err" role="alert">{{ $message }}</div>@enderror
             <fieldset style="border:0;padding:0;margin:0">
                 <legend class="sr-only">Usuario</legend>
@@ -58,7 +61,6 @@
                 @endforeach
             </fieldset>
             <button class="btn btn-primary" type="submit">Ingresar <x-icon name="arrow" size="16" /></button>
-            <p class="note">Versión de diseño: los datos son de ejemplo y no se guardan.</p>
         </form>
     </section>
 </div>

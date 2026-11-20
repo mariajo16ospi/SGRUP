@@ -8,9 +8,9 @@
         $inbox = app(ApprovalInbox::class)->pending();
         $purchaseCount = $inbox->where('type', 'compra')->count();
         $menu = [
-            ['Aprobaciones', 'inbox', route('vic.aprobaciones'), request()->routeIs('vic.aprobaciones*'), $inbox->count()],
             ['Panel general', 'panel', route('vic.panel'), request()->routeIs('vic.panel'), null],
             ['Proyectos y contratos', 'folder', route('vic.proyectos.index'), request()->routeIs('vic.proyectos.*'), null],
+            ['Aprobaciones', 'inbox', route('vic.aprobaciones'), request()->routeIs('vic.aprobaciones*'), $inbox->count()],
             ['Entidades', 'bank', route('entidades.index'), request()->routeIs('entidades.*'), null],
             ['Cronograma', 'calendar', route('vic.cronograma'), request()->routeIs('vic.cronograma'), null],
             ['Seguimiento técnico', 'list', route('vic.seguimiento'), request()->routeIs('vic.seguimiento'), null],
@@ -65,6 +65,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title') · SGRUP</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('img/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="512x512" href="{{ asset('img/icon-512.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('img/apple-touch-icon.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/sgrup.css') }}?v={{ filemtime(public_path('css/sgrup.css')) }}">
